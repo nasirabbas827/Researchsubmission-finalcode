@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 27, 2025 at 09:55 AM
+-- Generation Time: Aug 04, 2025 at 03:57 PM
 -- Server version: 10.4.28-MariaDB
 -- PHP Version: 8.2.4
 
@@ -138,17 +138,21 @@ CREATE TABLE `users` (
   `bio` text DEFAULT NULL,
   `user_type` varchar(50) DEFAULT NULL,
   `profile_picture` varchar(255) DEFAULT NULL,
-  `status` enum('pending','approved','rejected') DEFAULT 'pending'
+  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `full_name` varchar(100) NOT NULL,
+  `affiliation` varchar(150) NOT NULL,
+  `expertise` text NOT NULL,
+  `publications` int(11) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `email`, `phone`, `age`, `bio`, `user_type`, `profile_picture`, `status`) VALUES
-(1, 'faculty12', '$2y$10$I9jjw4myLjaLInrQxC2fvemwOOMQmKOESysxH8jb30iOLODJnfwRi', 'saifx280@gmail.com', '3176526827', 23, 'ds', 'Faculty Member', 'images/1748319257_cs201.png', 'approved'),
-(2, 'student12', '$2y$10$LuMxm/iLUgNhaCEu8XS8du3qv.Izh7BW5GVe/vhJKiI0gj0gZEbiO', 'nasiryt.827@gmail.com', '31765268278', 23, 'ds', 'Student', 'images/1748319947_addpet.png', 'approved'),
-(3, 'dummy user', '$2y$10$H3Fsu0wM8Auc2DbXCmRFMuACfVDi.vsw3.LDUCk8xlhPqsPLj3YvK', 'dummy@gmail.com', '4512', 33, NULL, 'Faculty Member', NULL, 'approved');
+INSERT INTO `users` (`id`, `username`, `password`, `email`, `phone`, `age`, `bio`, `user_type`, `profile_picture`, `status`, `full_name`, `affiliation`, `expertise`, `publications`) VALUES
+(1, 'faculty12', '$2y$10$I9jjw4myLjaLInrQxC2fvemwOOMQmKOESysxH8jb30iOLODJnfwRi', 'saifx280@gmail.com', '3176526827', 23, 'ds', 'Faculty Member', 'images/1748319257_cs201.png', 'approved', '', '', '', 0),
+(2, 'student12', '$2y$10$LuMxm/iLUgNhaCEu8XS8du3qv.Izh7BW5GVe/vhJKiI0gj0gZEbiO', 'nasiryt.827@gmail.com', '31765268278', 23, 'ds', 'Student', 'images/1748319947_addpet.png', 'approved', '', '', '', 0),
+(3, 'haider', '$2y$10$H3Fsu0wM8Auc2DbXCmRFMuACfVDi.vsw3.LDUCk8xlhPqsPLj3YvK', 'dummy@gmail.com', '4512', 33, 'fdsafd', 'Faculty Member', 'images/1754314278_2.png', 'approved', 'Haider ALI', 'VU', 'Data Science, Cybersecurity', 3);
 
 --
 -- Indexes for dumped tables

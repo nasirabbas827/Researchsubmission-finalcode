@@ -50,7 +50,12 @@ $result = mysqli_query($conn, "SELECT * FROM users ORDER BY id DESC");
         <?php while($row = mysqli_fetch_assoc($result)): ?>
             <tr>
                 <td><?= $row['id'] ?></td>
-                <td><?= htmlspecialchars($row['username']) ?></td>
+                <td>
+    <a href="view_details.php?id=<?= $row['id'] ?>">
+        <?= htmlspecialchars($row['username']) ?>
+    </a>
+</td>
+
                 <td><?= htmlspecialchars($row['email']) ?></td>
                 <td><?= htmlspecialchars($row['phone']) ?></td>
                 <td><?= htmlspecialchars($row['age']) ?></td>

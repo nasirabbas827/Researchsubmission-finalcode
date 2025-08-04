@@ -365,6 +365,54 @@ while ($row = mysqli_fetch_assoc($status_result)) {
         </div>
     </div>
 
+<!-- View Faculty Members -->
+<div class="section">
+    <div class="container">
+        <h2 class="text-center section-title">Meet Our Faculty</h2>
+
+        <?php
+            // Fetch only approved faculty members
+        $faculty_query = "SELECT * FROM users WHERE user_type = 'Faculty Member' AND status = 'approved'";
+        $faculty_result = mysqli_query($conn, $faculty_query);
+        ?>
+
+        <?php if (mysqli_num_rows($faculty_result) > 0): ?>
+            <div class="row">
+                <?php while ($fac = mysqli_fetch_assoc($faculty_result)): ?>
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100 shadow-sm">
+                            <?php
+$filename = $fac['profile_picture'];
+$filepath = 'faculty/' . $filename;
+
+$pic_path = (!empty($filename) && file_exists($filepath))
+    ? $filepath
+    : 'images/hotel.jpg';
+?>
+<img src="<?= $pic_path ?>" class="card-img-top" alt="Profile Picture" style="height: 250px; object-fit: cover;">
+
+                            <div class="card-body">
+                                <h5 class="card-title"><?= htmlspecialchars($fac['full_name'] ?: $fac['username']) ?></h5>
+                                <p class="card-text">
+                                    <strong>Email:</strong> <?= htmlspecialchars($fac['email']) ?><br>
+                                    <strong>Affiliation:</strong> <?= htmlspecialchars($fac['affiliation']) ?><br>
+                                    <strong>Expertise:</strong> <?= nl2br(htmlspecialchars($fac['expertise'])) ?><br>
+                                    <strong>Publications:</strong> <?= (int)$fac['publications'] ?>
+                                </p>
+                                <?php if (!empty($fac['bio'])): ?>
+                                    <p class="card-text"><?= nl2br(htmlspecialchars(substr($fac['bio'], 0, 100))) ?>...</p>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endwhile; ?>
+            </div>
+        <?php else: ?>
+            <div class="alert alert-info text-center">No approved faculty members found.</div>
+        <?php endif; ?>
+    </div>
+</div>
+
     <!-- Footer -->
     <footer class="text-center">
         <div class="container">

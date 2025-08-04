@@ -2,7 +2,6 @@
 include('config.php');
 session_start();
 
-// Redirect to login if not authenticated
 if (!isset($_SESSION["id"]) || empty($_SESSION["id"])) {
     header("location: ../index.php");
     exit;
@@ -10,24 +9,57 @@ if (!isset($_SESSION["id"]) || empty($_SESSION["id"])) {
 
 $user_id = $_SESSION["id"];
 $upload_error = $update_msg = "";
+$profile_picture = "";
 
-// Fetch user info
-$sql = "SELECT username, email, age, bio, profile_picture FROM users WHERE id = ?";
+// Fetch current user data
+$sql = "SELECT username, email, age, bio, profile_picture, full_name, affiliation, expertise, publications 
+        FROM users WHERE id = ?";
 $stmt = mysqli_prepare($conn, $sql);
 mysqli_stmt_bind_param($stmt, "i", $user_id);
 mysqli_stmt_execute($stmt);
-mysqli_stmt_bind_result($stmt, $username, $email, $age, $bio, $profile_picture);
+mysqli_stmt_bind_result($stmt, $username, $email, $age, $bio, $profile_picture, $full_name, $affiliation, $expertise, $publications);
 mysqli_stmt_fetch($stmt);
 mysqli_stmt_close($stmt);
 
-// Update user info
+// Handle form submission
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $errors = [];
+
     $newUsername = trim($_POST["username"]);
     $newEmail = trim($_POST["email"]);
     $newAge = intval($_POST["age"]);
     $newBio = trim($_POST["bio"]);
+    $newFullName = trim($_POST["full_name"]);
+    $newAffiliation = trim($_POST["affiliation"]);
+    $newPublications = trim($_POST["publications"]);
+    $newExpertise = isset($_POST["expertise"]) ? implode(", ", $_POST["expertise"]) : "";
 
-    // Handle profile picture upload
+    // Validations
+    if (empty($newFullName) || !preg_match("/^[a-zA-Z ]{3,30}$/", $newFullName)) {
+        $errors[] = "Full name must be 3–30 letters and spaces only.";
+    }
+
+    if (empty($newEmail) || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+        $errors[] = "Valid email is required.";
+    }
+
+    if ($newAge < 18 || $newAge > 120) {
+        $errors[] = "Age must be between 18 and 120.";
+    }
+
+    if (empty($newAffiliation)) {
+        $errors[] = "Affiliation is required.";
+    }
+
+    if (empty($_POST["expertise"]) || !is_array($_POST["expertise"])) {
+        $errors[] = "Please select at least one area of expertise.";
+    }
+
+    if (!is_numeric($newPublications) || $newPublications < 0) {
+        $errors[] = "Publications must be a non-negative number.";
+    }
+
+    // Profile picture upload
     if (!empty($_FILES["profile_picture"]["name"])) {
         $target_dir = "images/";
         $file_name = basename($_FILES["profile_picture"]["name"]);
@@ -39,29 +71,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (move_uploaded_file($_FILES["profile_picture"]["tmp_name"], $target_file)) {
                 $profile_picture = $target_file;
             } else {
-                $upload_error = "Error uploading the profile picture.";
+                $errors[] = "Error uploading the profile picture.";
             }
         } else {
-            $upload_error = "Only JPG, JPEG, PNG, and GIF files are allowed.";
+            $errors[] = "Only JPG, JPEG, PNG, and GIF files are allowed.";
         }
     }
 
-    // Update query
-    $update_query = "UPDATE users SET username = ?, email = ?, age = ?, bio = ?, profile_picture = ? WHERE id = ?";
-    $update_stmt = mysqli_prepare($conn, $update_query);
-    mysqli_stmt_bind_param($update_stmt, "ssissi", $newUsername, $newEmail, $newAge, $newBio, $profile_picture, $user_id);
+    if (empty($errors)) {
+        $update_query = "UPDATE users SET 
+            username = ?, email = ?, age = ?, bio = ?, profile_picture = ?, 
+            full_name = ?, affiliation = ?, expertise = ?, publications = ? 
+            WHERE id = ?";
+        $stmt = mysqli_prepare($conn, $update_query);
+        mysqli_stmt_bind_param(
+            $stmt, "ssisssssii",
+            $newUsername, $newEmail, $newAge, $newBio, $profile_picture,
+            $newFullName, $newAffiliation, $newExpertise, $newPublications, $user_id
+        );
 
-    if (mysqli_stmt_execute($update_stmt)) {
-        $update_msg = '<div class="alert alert-success">Profile updated successfully.</div>';
-        $username = $newUsername;
-        $email = $newEmail;
-        $age = $newAge;
-        $bio = $newBio;
+        if (mysqli_stmt_execute($stmt)) {
+            $update_msg = '<div class="alert alert-success">Profile updated successfully.</div>';
+            $username = $newUsername;
+            $email = $newEmail;
+            $age = $newAge;
+            $bio = $newBio;
+            $full_name = $newFullName;
+            $affiliation = $newAffiliation;
+            $expertise = $newExpertise;
+            $publications = $newPublications;
+        } else {
+            $update_msg = '<div class="alert alert-danger">Error updating profile: ' . mysqli_error($conn) . '</div>';
+        }
+        mysqli_stmt_close($stmt);
     } else {
-        $update_msg = '<div class="alert alert-danger">Error updating profile: ' . mysqli_error($conn) . '</div>';
+        $update_msg = '<div class="alert alert-danger"><ul><li>' . implode('</li><li>', $errors) . '</li></ul></div>';
     }
-
-    mysqli_stmt_close($update_stmt);
 }
 ?>
 
@@ -78,13 +123,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <?php include('navbar.php'); ?>
 
 <div class="container mt-5 mb-5">
-    <div class="card mx-auto" style="max-width: 600px;">
+    <div class="card mx-auto" style="max-width: 750px;">
         <div class="card-body">
             <h2 class="mb-4">Update Profile</h2>
             <?php echo $update_msg; ?>
-            <?php if (!empty($upload_error)) echo '<div class="alert alert-warning">'.$upload_error.'</div>'; ?>
 
-            <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" enctype="multipart/form-data">
+            <form method="post" action="" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>Username:</label>
                     <input type="text" class="form-control" name="username" value="<?php echo htmlspecialchars($username); ?>" required>
@@ -102,6 +146,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <textarea class="form-control" name="bio" rows="3"><?php echo htmlspecialchars($bio); ?></textarea>
                 </div>
                 <div class="form-group">
+                    <label>Full Name:</label>
+                    <input type="text" class="form-control" name="full_name" value="<?php echo htmlspecialchars($full_name); ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Affiliation:</label>
+                    <input type="text" class="form-control" name="affiliation" value="<?php echo htmlspecialchars($affiliation); ?>" required>
+                </div>
+                <div class="form-group">
+                    <label>Expertise:</label><br>
+                    <?php
+                    $areas = ["AI", "Data Science", "Cybersecurity", "IoT", "Software Engineering"];
+                    $selected_expertise = explode(", ", $expertise);
+                    foreach ($areas as $area) {
+                        $checked = in_array($area, $selected_expertise) ? "checked" : "";
+                        echo "<div class='form-check form-check-inline'>
+                                <input class='form-check-input' type='checkbox' name='expertise[]' value='$area' $checked>
+                                <label class='form-check-label'>$area</label>
+                              </div>";
+                    }
+                    ?>
+                </div>
+                <div class="form-group">
+                    <label>Number of Publications:</label>
+                    <input type="number" class="form-control" name="publications" value="<?php echo htmlspecialchars($publications); ?>" required>
+                </div>
+                <div class="form-group">
                     <label>Profile Picture:</label><br>
                     <?php if (!empty($profile_picture)) echo "<img src='$profile_picture' width='100' class='mb-2'><br>"; ?>
                     <input type="file" name="profile_picture" class="form-control-file">
@@ -114,6 +184,3 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 </body>
 </html>
-
-
-
